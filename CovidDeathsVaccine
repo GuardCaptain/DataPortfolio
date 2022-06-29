@@ -1,0 +1,110 @@
+  --Covid Deaths Information
+ SELECT SUM(total_deaths) AS Total_Deaths, continent
+ FROM dataportfoliocovid.CovidDeaths.Deaths
+ GROUP BY continent
+ ORDER BY Total_Deaths DESC
+
+  -- Death percentage from Covid in US
+  -- Daily Likelihood of dying from Covid in US
+SELECT date, location, total_cases, total_deaths, total_deaths/total_cases*100 AS death_percentage
+FROM `dataportfoliocovid.CovidDeaths.Deaths`
+WHERE location LIKE '%States%'
+ORDER BY death_percentage DESC
+
+  -- Percentage of total population
+SELECT date, location, Populaton, total_cases, total_cases/Population AS Percentage_infected
+FROM dataportfoliocovid.CovidDeaths.Deaths 
+
+  --Total recorded infections in each Continent group
+SELECT MAX(total_cases) AS Most_infections, location
+FROM dataportfoliocovid.CovidDeaths.Deaths
+WHERE continent IS NULL
+GROUP BY location
+ORDER BY Most_infections DESC
+
+  --Total recorded infections in each Country
+SELECT MAX(total_cases) AS Most_infections, location
+FROM dataportfoliocovid.CovidDeaths.Deaths
+WHERE continent IS NOT NULL
+GROUP BY location
+ORDER BY Most_infections DESC
+
+  --Checking to see if total infections of World equals that of all other groups
+SELECT SUM(Most_infections) AS total FROM (
+  SELECT MAX(total_cases) AS Most_infections
+  FROM `dataportfoliocovid.CovidDeaths.Deaths`
+  WHERE location <> 'World' AND continent IS NOT NULL
+  GROUP BY location
+) AS x
+
+  --Checking Total death count in each Country
+SELECT location, MAX(total_deaths) AS death_count
+FROM `dataportfoliocovid.CovidDeaths.Deaths`
+WHERE continent IS NOT NULL
+GROUP BY location
+ORDER BY death_count DESC
+
+  --Checking Data By Continent
+SELECT continent, MAX(total_cases) AS Total_infect, MAX(total_deaths) AS Death_count
+FROM dataportfoliocovid.CovidDeaths.Deaths
+WHERE continent IS NOT NULL
+GROUP BY continent
+ORDER BY Total_infect DESC
+
+  -- Checking out the total of new cases and new deaths by date worldwide
+SELECT date, SUM(new_cases) AS sum_new_cases, SUM(new_deaths) AS sum_new_deaths
+FROM `dataportfoliocovid.CovidDeaths.Deaths`
+GROUP BY date
+ORDER BY sum_new_deaths DESC
+
+  --Total new cases, new deaths, and Death Percentage as a whole
+SELECT SUM(new_cases) AS total_new_cases, SUM(new_deaths) AS total_new_deaths, (SUM(new_deaths)/SUM(new_cases))*100 AS DeathPercentage
+FROM `dataportfoliocovid.CovidDeaths.Deaths`
+WHERE new_cases <> 0
+
+  --Calling from a table to get Death Percentage
+SELECT date, sum_new_cases, sum_new_deaths, sum_new_deaths/sum_new_cases*100 AS DeathPercentage FROM(
+    SELECT date, SUM(new_cases) AS sum_new_cases, SUM(new_deaths) AS sum_new_deaths
+    FROM `dataportfoliocovid.CovidDeaths.Deaths`
+    GROUP BY date
+    ORDER BY sum_new_deaths DESC
+  ) AS x
+  WHERE sum_new_cases <> 0
+
+  --Covid Vaccinations Information
+SELECT *
+FROM `dataportfoliocovid.CovidVaccinations.Vaccinations`
+
+  --Covid Vaccinations Information Join with Covid Deaths Information
+SELECT *
+FROM dataportfoliocovid.CovidVaccinations.Vaccinations AS vac
+JOIN dataportfoliocovid.CovidDeaths.Deaths AS dea
+ON vac.location = dea.location AND vac.date = dea.date
+
+  --Rolling count of new vaccinations
+SELECT dea.continent, dea.date, dea.location, population, new_vaccinations,
+  SUM(new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.date,dea.location) AS roll_count_vaccinations
+FROM dataportfoliocovid.CovidDeaths.Deaths AS dea
+JOIN dataportfoliocovid.CovidVaccinations.Vaccinations AS vac
+ON dea.location = vac.location AND dea.date = vac.date
+WHERE dea.continent IS NOT NULL
+ORDER BY 3,2
+
+  --Rolling count of new vaccinations and Percentage vaccinated W/ TempTables
+  SELECT *, (roll_count_vaccinations/population)*100 AS pop_vac FROM(
+SELECT dea.continent, dea.date, dea.location, population, new_vaccinations,
+  SUM(new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.date,dea.location) AS roll_count_vaccinations
+FROM dataportfoliocovid.CovidDeaths.Deaths AS dea
+JOIN dataportfoliocovid.CovidVaccinations.Vaccinations AS vac
+ON dea.location = vac.location AND dea.date = vac.date
+WHERE dea.continent IS NOT NULL
+ORDER BY 3,2
+  ) as x
+
+  --Checking population of each country
+SELECT MAX(population) AS Population, vac.location
+FROM dataportfoliocovid.CovidDeaths.Deaths AS dea
+JOIN dataportfoliocovid.CovidVaccinations.Vaccinations AS vac
+ON dea.date = vac.date AND dea.location = vac.location
+WHERE vac.continent IS NOT NULL
+GROUP BY vac.location
