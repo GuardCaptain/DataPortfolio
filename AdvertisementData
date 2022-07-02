@@ -10,10 +10,9 @@ ADD Sex Varchar(255);
 
 UPDATE Advertisement
 SET Sex = CASE CAST(Male AS VARCHAR) WHEN 0 THEN 'Female'
-									 WHEN 1 THEN 'Male'
-									 ELSE 'ERROR'
-									 END
-FROM AdsProject.dbo.Advertisement
+				     WHEN 1 THEN 'Male'
+				     ELSE 'ERROR'
+				     END
 
 --REMOVE COLUMN 'Male'
 ALTER TABLE AdsProject.dbo.Advertisement
