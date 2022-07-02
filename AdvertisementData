@@ -1,0 +1,58 @@
+-- Project Advertisements
+
+  SELECT *
+  FROM AdsProject.dbo.Advertisement
+ 
+  --CREATING A NEW COLUMN 'Sex' FILLED WITH MALE OR FEMALE
+
+ALTER TABLE AdsProject.dbo.Advertisement
+ADD Sex Varchar(255);
+
+UPDATE Advertisement
+SET Sex = CASE CAST(Male AS VARCHAR) WHEN 0 THEN 'Female'
+									 WHEN 1 THEN 'Male'
+									 ELSE 'ERROR'
+									 END
+FROM AdsProject.dbo.Advertisement
+
+--REMOVE COLUMN 'Male'
+ALTER TABLE AdsProject.dbo.Advertisement
+DROP COLUMN Male
+
+--CHECKING THE COUNT OF CLICKED ON AD
+SELECT COUNT([Clicked on Ad])
+FROM AdsProject.dbo.Advertisement
+GROUP BY [Clicked on Ad]
+
+--CHECK TO SEE DISTINCT NUMBER OF COUNTRIES IN DATA
+SELECT DISTINCT Country
+FROM AdsProject.dbo.Advertisement
+
+--CHECKING HOW MANY TIMES THE COUNTRY IS IN THE DATA
+SELECT Country, COUNT(Country) AS Counts
+FROM AdsProject.dbo.Advertisement
+GROUP BY Country
+ORDER BY Counts DESC
+
+--CREATE NEW COLUMN 'FirstWord' FOR FIRST WORD IN 'AD TOPIC LINE'
+
+SELECT *, SUBSTRING([Ad Topic Line],1, CHARINDEX(' ',[Ad Topic Line])-1)
+FROM AdsProject.dbo.Advertisement
+
+--Create Column 'FirstWord'
+ALTER TABLE Advertisement
+ADD FirstWord VARCHAR(255);
+
+--Input values into 'FirstWord'
+UPDATE Advertisement
+SET FirstWord = SUBSTRING([Ad Topic Line],1, CHARINDEX(' ',[Ad Topic Line])-1)
+
+--Count How many times the first word of Ad Topic Line shows up
+SELECT FirstWord, COUNT(FirstWord) AS Counts
+FROM AdsProject.dbo.Advertisement
+GROUP BY FirstWord
+ORDER BY Counts
+
+--Checking to see if there is a pattern with 'FirstWord'
+SELECT *, ROW_NUMBER() OVER(PARTITION BY FirstWord ORDER BY [Daily Time Spent on Site]) AS num_row
+FROM AdsProject.dbo.Advertisement
